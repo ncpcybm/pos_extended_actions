@@ -25,8 +25,9 @@ app_license = "mit"
 # ------------------
 
 # include js, css files in header of desk.html
+
 # app_include_css = "/assets/pos_extended_actions/css/pos_extended_actions.css"
-# app_include_js = "/assets/pos_extended_actions/js/pos_extended_actions.js"
+app_include_js = "/assets/pos_extended_actions/js/pos_extended_actions.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/pos_extended_actions/css/pos_extended_actions.css"
@@ -47,6 +48,9 @@ app_license = "mit"
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
+
+doctype_list_js = {"Item" : "public/js/pos_extended_actions.js"}
+
 
 # Svg Icons
 # ------------------
@@ -241,4 +245,7 @@ app_license = "mit"
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
+
+fixtures = ["Client Script"]
+
 

@@ -1,0 +1,135 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "POS Invoice",
+  "enabled": 0,
+  "modified": "2024-12-20 09:13:07.920871",
+  "module": "Michalis Diamond Gallery",
+  "name": "POS Invoice",
+  "script": "frappe.ui.form.on('POS Invoice', {\n    ____items_add: function(frm, cdt, cdn) {\n        let item = frappe.get_doc(cdt, cdn);\n        if (item.item_code) {\n            // Fetch the stock status of the item\n            frappe.call({\n                method: 'frappe.client.get',\n                args: {\n                    doctype: 'Item',\n                    name: item.item_code\n                },\n                callback: function(response) {\n                    let item_doc = response.message;\n                    // You can check the status of the stock or if it's in a warehouse involved in transfer\n                    if (item_doc.stock_ledger_entries) {\n                        // Check if the stock is in \"In Transit\" warehouse or if the item is part of an active stock transfer\n                        let inTransit = item_doc.stock_ledger_entries.some(entry => entry.warehouse.includes('In Transit'));\n                        \n                        if (inTransit) {\n                            // Show message and prevent item from being added\n                            frappe.msgprint(__('This item is in transit and cannot be sold.'));\n                            frm.fields_dict['items'].grid.remove_doc(cdt, cdn);  // Remove item from POS\n                        }\n                    }\n                }\n            });\n        }\n    }\n});\n",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Item",
+  "enabled": 0,
+  "modified": "2024-12-19 16:20:58.602408",
+  "module": "Michalis Diamond Gallery",
+  "name": "Test Client Script",
+  "script": "_addEventListener= () => {\n        document.querySelector('button[data-fieldname=\"custom_print_label\"]').addEventListener('click', function() {\n      // Your code here\n      document.querySelector('button[data-original-title=\"Print\"]').click(); \n      //console.log('Element clicked!');\n    });\t\n}\n        \nfrappe.ui.form.on('Item', {\n    onload_post_render(frm) {\n        _addEventListener();\n                        // This function will run on every page load globally\n        if (frappe.user.has_role(\"Disable Desk\")) {\n            // User is on the Desk page\n            cur_frm.disable_form(1)\n            cur_frm.disable_save(1)\n            document.querySelector('button[data-label=\"Duplicate\"]').remove()\n            document.querySelector('div[data-label=\"Actions\"]').remove()\n\n\n        }\n    },\n\tonload(frm) {\n        //frappe.msgprint('A row has been added to the links table 🎉 ');\n        //document.querySelector('div[data-fieldname=\"custom_printable_zpl\"]').innerHTML = \"<p>This is a custom ZPL<p>\";\n        \n\n    \n    \n    \n                // The URL to be used as the src for the image\n        var imageUrl = 'https://api.labelary.com/v1/printers/12dpmm/labels/1.5748x0.393701/0/%5EXA%20%5EFO10,12%20%5EPW420%20%5ELS0%20%5ELH0,0%20%5EFO250,5%20%5EBQN,2,2%20%5EFDMM,AAC-42%20%5EFS%20%5EFO190,40%20%5EBY1%20%5EBSN,20,Y,N%20%5EFDl38354726%5EFS%20%5ECI0,21,36%20%5EFO170,10%5EA0N30,30%5EFD$2900%5EFS%20%5EFO160,40%5EGC20,10,B%5EFS%20%5EFS%20%5EXZ';\n\n        // Create a new <img> element\n        var imgElement = document.createElement('img');\n\n        // Assign the URL as the src attribute\n        imgElement.src = imageUrl;\n\n        // Optionally, you can set other attributes (like alt or class)\n        imgElement.alt = 'Generated Label Image';\n        imgElement.style.maxWidth = '100%';  // Make sure the image fits within its container\n        imgElement.style.border = '1px solid #000';  // Black 5px solid border\n\n        // Append the image to a container in the HTML\n        document.querySelector('div[data-fieldname=\"custom_printable_zpl\"]').appendChild(imgElement);\n        \n        document.querySelector('div[data-fieldname=\"custom_printable_zpl_notice\"]').innerHTML = `<div class=\"mt-2 alert alert-warning\" role=\"alert\">\n  Use the print dialoge to perform this action.</div>`;\n        \n\t}\n})",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Material Request",
+  "enabled": 0,
+  "modified": "2024-12-04 13:00:27.160176",
+  "module": "Michalis Diamond Gallery",
+  "name": "Material Request",
+  "script": "frappe.ui.form.on('Material Request', {\n\tonload_post_render: async function(frm) {\n\t\tfrm.set_value('material_request_type','Material Transfer')\n\t\tfrm.set_value('schedule_date','Today')\n        //pos_profiles = await frappe.db.get('POS Profile')\n        //console.log(pos_profiles);\n\n\t}\n})",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Item",
+  "enabled": 0,
+  "modified": "2024-12-06 11:51:35.127069",
+  "module": "Michalis Diamond Gallery",
+  "name": "Add global search",
+  "script": "frappe.ui.form.on('Item', {\n    refresh: function(frm) {\n        frm.fields_dict['item_code'].get_query = function(doc, cdt, cdn) {\n            return {\n                filters: [\n                    // Global filter for custom barcode field\n                    ['Item', 'custom_barcode_midas', 'like', frm.doc.custom_barcode_midas || '']\n                ]\n            };\n        };\n    }\n});",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Sales Invoice",
+  "enabled": 0,
+  "modified": "2024-12-06 13:34:24.601315",
+  "module": null,
+  "name": "Fetch Coupon Amount",
+  "script": "frappe.ui.form.on('Sales Invoice', {\n    coupon_amount: function(frm) {\n        let coupon_value = frm.doc.coupon_amount;\n        if (coupon_value > 0) {\n            // Add a payment entry for the coupon\n            frm.add_child('payments', {\n                mode_of_payment: 'Coupon',\n                amount: coupon_value\n            });\n            frm.refresh_field('payments');\n        }\n    },\n    \n    coupon_code: function(frm) {\n        // Fetch the coupon details based on the entered code\n        const coupon_code = frm.doc.coupon_code;\n\n        if (coupon_code) {\n            // Call the server-side method to get coupon details\n            frappe.call({\n                method: \"frappe.client.get\",\n                args: {\n                    doctype: \"Coupon Code\",\n                    filters: { \"coupon_code\": coupon_code }\n                },\n                callback: function(response) {\n                    if (response.message) {\n                        let coupon = response.message;\n                        console.log(coupon);\n                        //frm.set_value('custom_amount', coupon.coupon_amount);\n                    } else {\n                        frappe.msgprint(__('Invalid or expired coupon code'));\n                    }\n                }\n            });\n        } else {\n            //frm.set_value('custom_amount', 0);\n        }\n    }\n})",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Coupon Code",
+  "enabled": 1,
+  "modified": "2024-12-23 17:05:13.409103",
+  "module": "Michalis Diamond Gallery",
+  "name": "Gift Card Autoname",
+  "script": "generateCouponCode = (length) => {\n  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789';  // A-Z (uppercase only)\n  let result = '';\n\n  // Loop to generate 'length' random characters\n  for (let i = 0; i < length; i++) {\n    const randomIndex = Math.floor(Math.random() * characters.length);  // Get a random index\n    result += characters[randomIndex];  // Append the character at that index\n  }\n\n  return result;\n}\n\n\nfrappe.ui.form.on('Coupon Code', {\n\tonload_post_render(frm) {\n\t    \n\t    console.log(\"onload_post_render\");\n\t    \n        if (frappe.user.has_role(\"Administrator\")) {\n            return;\n        }\n        \n        if (frappe.user.has_role(\"Disable Desk\")) {\n            frm.disable_form(1)\n            frm.disable_save(1)\n            document.querySelector('button.btn-new[data-doctype=\"POS Invoice\"]').remove()\n            document.querySelector('.custom-actions').remove()\n        }\n        \n\t    \n\t\tif (!frm.is_new()) \n\t\t{\n\t\t    frm.toggle_enable('valid_from', 0)\n\t\t    frm.toggle_enable('coupon_code', 0)\n            frm.toggle_enable('coupon_name', 0)\n            frm.toggle_enable('customer', 0)\n            frm.toggle_enable('pricing_rule', 0)\n            \n            \n\t\t    return;   \n\t\t} \n\t\t\n\t\tlet coupon = generateCouponCode(10);\n\t\tconsole.log(coupon);\n\t\tfrm.toggle_reqd('coupon_name',1);\n        frm.set_value('coupon_code', coupon)\n        frm.set_value('coupon_name', coupon)\n        frm.set_value('valid_from', frappe.datetime.obj_to_str(new Date()))\n        frm.set_value('valid_upto', frappe.datetime.obj_to_str(moment(new Date()).add(1,'year')))\n        // Walkin Customer\n        frm.set_value('customer', 'Walkin Customer')\n        \n\n\n\n\n\t}\n})",
+  "view": "Form"
+ },
+ {
+  "_liked_by": "[\"Administrator\"]",
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Item",
+  "enabled": 1,
+  "modified": "2024-12-17 12:43:36.956634",
+  "module": "Michalis Diamond Gallery",
+  "name": "Add Custom Stone Description Where Exists",
+  "script": "frappe.ui.form.on('Item', {\n\tvalidate(frm) {\n\t    let stoneDescription = '';\n        $.each(frm.doc.custom_stones,  function(i,  d) {\n            console.log(d)\n            stoneDescription += `${d.abbreviation} ${d.value} `;\n            \n        });\n        \n        cur_frm.set_value('custom_stone_description', stoneDescription)\n        validated = true;\n\t},\n\tcustom_is_cp(frm) {\n        cur_frm.set_value('custom_consignment',cur_frm.doc.custom_is_cp)\n\t}\n})",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Coupon Code",
+  "enabled": 0,
+  "modified": "2024-12-19 16:17:05.837751",
+  "module": "Michalis Diamond Gallery",
+  "name": "Disable Add new Coupon",
+  "script": "\n\n\nfrappe.listview_settings['Coupon Code'] = {\n    onload : function(listview) {\n        if (frappe.user.has_role(\"Disable Desk\")) {\n            // User is on the Desk page\n            //cur_frm.disable_form(1)\n            //cur_frm.disable_save(1)\n            document.querySelector('button[data-label=\"Add Coupon Code\"]').remove()\n            document.querySelector('.custom-actions').remove()\n        \n        \n        }\n    }\n};",
+  "view": "List"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Coupon Code",
+  "enabled": 1,
+  "modified": "2025-02-03 13:52:35.724506",
+  "module": "Erpnext Pos Coupon",
+  "name": "Add Custom Actions in Coupon Code",
+  "script": "frappe.ui.form.on('Coupon Code', {\n    setup(frm) {\n        console.log('Something Happend ...')\n    },\n\trefresh(frm) {\n        frm.add_custom_button(__('Create Sales Invoice'), function() {\n            // Define what happens when the button is clicked\n            frappe.msgprint(__('Create Sales Invoice !'));\n            \n            document.cookie = \"couponCode=\" + frm.doc.name + \"; path=/; max-age=86400\";  // expires in 1 day (86400 seconds)\n\n            window.location = '/app/pos-invoice/new-pos-invoice'\n            return;\n            // Add your custom action logic here, such as calling an API or updating fields.\n            frappe.call({\n                method: 'erpnext_pos_coupon.pos_coupon.create_sales_invoice',\n                args: {\n                    coupon_code: frm.doc.name,  \n                    customer_name: frm.doc.customer,\n                    rate: frm.doc.custom_amount\n                },\n                callback: function(response) {\n                    if(response.message) {\n                        frappe.msgprint(__('Server Action Result: ') + response.message);\n                    }\n                },\n                freeze: true,  // Optional: Show a loading indicator\n                freeze_message: __('Executing Server Action...')\n            });\n            \n        });\n\t}\n})",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "POS Invoice",
+  "enabled": 1,
+  "modified": "2025-02-03 14:38:02.608708",
+  "module": "Erpnext Pos Coupon",
+  "name": "POS Invoice - Coupon Code",
+  "script": "function getCookie(name) {\n    let nameEQ = name + \"=\";  // Prepare the name to match with cookie\n    let ca = document.cookie.split(';');  // Split the cookies into an array of key-value pairs\n    for (let i = 0; i < ca.length; i++) {\n        let c = ca[i].trim();  // Trim any leading whitespace\n        if (c.indexOf(nameEQ) === 0) {  // If the cookie starts with the specified name\n            return c.substring(nameEQ.length, c.length);  // Return the value after the \"=\" sign\n        }\n    }\n    return null;  // Return null if the cookie is not found\n}\n\nfunction removeCookie(name) {\n    if (document.cookie.indexOf(name) !== -1) {\n        document.cookie = name + \"=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;\";\n    }\n}\n\nfrappe.ui.form.on('POS Invoice', {\n\tonload_post_render(frm) {\n\t\t// your code here\n\t\t\n\t\t\n\t\tif (cur_frm.is_new() && getCookie('couponCode'))\n\t\t{\n\t\t    cur_frm.toggle_display(\"custom_coupon_code\",0)\n\t\t    cur_frm.toggle_display(\"custom_apply_coupon\",0)\n\t\t    cur_frm.toggle_display(\"custom_credit_forward_amount_\",0)\n\n\n\n\t\t    console.log('onload_post_render')\n\t\t    \n\t\t    cur_frm.set_value(\"notes\", \"Coupon Code: \" + getCookie('couponCode'))\n\t\t    cur_frm.doc.items = []\n\t\t    \n\t\t    frappe.db.get_doc(\"Coupon Code\", getCookie('couponCode')).then(r => {\n\t\t        console.log(r)\n\t\t        var child = cur_frm.add_child('items', {\n\t\t            item_code: 'Gift Card', \n                    item_name: 'Gift Card', \n\t\t            qty: 1,               \n\t\t            rate: r.custom_amount,\n\t\t            uom: 'Unit',\n\t\t            description: 'Gift Card'\n\t\t            \n\t\t        });\n\t\t        \n\t\t        cur_frm.set_value(\"custom_linked_voucher\", getCookie('couponCode'))\n\n\n\t\t        cur_frm.refresh_field('items');\n\t\t        removeCookie('couponCode')\n\t\t    })\n\t\t}\n\t\t\n\t}\n})",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "POS Invoice",
+  "enabled": 0,
+  "modified": "2025-03-24 12:21:02.324570",
+  "module": "Michalis Diamond Gallery",
+  "name": "Request Sales Person PIN",
+  "script": "frappe.ui.form.on('POS Invoice', {\n    onload_post_render(frm) {\n\n\n    },\n    refresh(frm) {\n\n        setTimeout(async () =>  {\n\n            //setInterval(detectDevTools, 1000);\n            // disable_copying();\n            // let devtoolsOpen = false;\n            // const threshold = 160;\n            // disable_right_click()\n\n        }, 0);\n        \n    }\n    \n})\n\nwindow.retry_count__exchange_rate_btn = 3;\nwindow.render_toggle_orders_btn_retry_count = 3\n\nconst render_toggle_orders_btn = () => {\n    try {\n\n        const value = getItemWithExpiry('seller_profile');\n\n        c = document.querySelectorAll('.toggle-orders-btn').length\n\n        if (c === 0) {\n            var button = document.createElement('button');\n\n            button.innerHTML = 'Toggle Recent Orders';\n\n\n            button.classList.add('toggle-orders-btn', 'btn', 'btn-default', 'icon-btn');\n            button.setAttribute('type', 'button');\n\n            button.onclick = function () {\n                this.toggle_recent_order.bind(this)\n            };\n\n            let container = document.querySelector('.standard-actions');\n            container.innerHTML = container.innerHTML + \"<br/>\";\n            container.appendChild(button);\n        }\n    } catch (err) {\n        window.render_toggle_orders_btn_retry_count--;\n        while (window.render_toggle_orders_btn_retry_count >= 0) {\n            setTimeout(() => {\n                render_toggle_orders_btn()\n            }, 3200);\n        }\n    }\n}\n\nfunction render_currency_exchange_modal() {\n    document.querySelector('.exch-rate-btn').addEventListener('click', function () {\n        window.open('https://data.ecb.europa.eu/currency-converter', '_blank');\n    });\n}\n\nwindow.retry_count__accept_transfer_button = 3\nfunction render_accept_transfer_button() {\n\n    try {\n\n        c = document.querySelectorAll('.accp-transf-btn').length\n        if (c === 0) {\n            var button = document.createElement('button');\n\n            button.innerHTML = 'Transfers';\n\n\n            button.classList.add('accp-transf-btn', 'btn', 'btn-info', 'icon-btn');\n            button.setAttribute('type', 'button');\n\n            button.onclick = function () {\n                request_pin();\n            };\n\n            let container = document.querySelector('.standard-actions');\n            container.innerHTML = container.innerHTML + \"<br/>\";\n            container.appendChild(button);\n        }\n\n    }\n    catch (err) {\n        window.retry_count__accept_transfer_button--;\n\n        while (window.retry_count__accept_transfer_button >= 0) {\n\n            setTimeout(() => {\n                render_accept_transfer_button()\n            }, 6000);\n\n        }\n    }\n}\n\nwindow.retry_count = 3;\nfunction render_switch_profile_button() {\n    try {\n\n        const value = getItemWithExpiry('seller_profile');\n\n        c = document.querySelectorAll('.switch-profile-btn').length\n\n        if (c === 0) {\n            var button = document.createElement('button');\n\n            button.id = \"\"\n\n            if (value) {\n                button.innerHTML = 'Switch Seller Profile';\n            } else {\n                button.innerHTML = 'Select Seller Profile';\n            }\n\n            button.classList.add('switch-profile-btn', 'btn', 'btn-dark', 'icon-btn');\n            button.setAttribute('type', 'button');\n\n            button.onclick = function () {\n                request_pin();\n            };\n\n            let container = document.querySelector('.standard-actions');\n            container.innerHTML = container.innerHTML + \"<br/>\";\n            container.appendChild(button);\n        }\n\n    }\n    catch (err) {\n        window.retry_count--;\n\n        while (window.retry_counnt >= 0) {\n\n            setTimeout(() => {\n                render_switch_profile_button()\n            }, 3000);\n\n\n\n        }\n\n\n    }\n\n\n}\n\n\n",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Item",
+  "enabled": 1,
+  "modified": "2025-04-07 12:11:10.833832",
+  "module": "Pos Extended Actions",
+  "name": "Extend Item list",
+  "script": "function update_pricing(s_item, d_amount, b_is_decrease_value, d_percent_value) \n{\n    frappe.db.get_single_value(\"Michalis Diamond Gallery Settings\", \"round_to_nearest_10\").then((res) => {\n        \n                alert(res)\n                \n                frappe.call({\n                    method: 'michalis_diamond_gallery.api.perform_item_bulk_action',\n                    args: {\n                        item:  s_item,\n                        percent_value: d_percent_value,\n                        fixed_value: d_amount,\n                        decrease: b_is_decrease_value,\n                        round: res \n                    },\n                    callback: function(response) {\n                        if (response.message) {\n                            frappe.msgprint(__('Bulk action performed on {0} items.', [response.message]));\n                        }\n                    }\n                });\n    })\n}\n\nfunction request_data(selected_items, mode) {\n            // mode => 0 -> normal increase/decrese \n            // mode => 1 -> percent increase/decrease\n            \n            let items = Array()\n            \n            let d = new frappe.ui.Dialog({\n                title: 'Enter details',\n                fields: [\n                    {\n                        label: 'Amount',\n                        fieldname: 'amount',\n                        fieldtype: 'Float'\n                    }, \n                    {\n                        label: 'Is decrease',\n                        fieldname: 'is_decrease_value',\n                        fieldtype: 'Check'\n                    }\n                ],\n                size: 'small', // small, large, extra-large \n                primary_action_label: 'Submit',\n                primary_action(values) {\n                    \n                    console.log(values);\n                    \n                    if (selected_items.length >= 1) {\n                        frappe.msgprint(__('Performing custom action on selected items...'));\n                        \n                        if (selected_items.length > 0) {\n                            selected_items.forEach(el=> {\n                                items.push(el.item_code)\n                            })\n                            \n                            // update_pricing(s_item, d_amount, b_is_decrease_value, d_percent_value) \n                            \n                            if (mode === 0) {\n                                if (items.length >= 1) {\n                                    for (let index = 0; index < items.length; index++) {\n                                        update_pricing(items[index], values.amount, values.is_decrease_value, 0)\n                                    }\n                                } \n                            }\n                            else {\n                                if (items.length >= 1) {\n                                    for (let index = 0; index < items.length; index++) {\n                                        update_pricing(items[index], 0, values.is_decrease_value, values.amount)\n                                    }\n                                } \n                            }\n                        } else {\n                            frappe.msgprint(__('Please select at least one item.'));\n                        }\n                        \n                    } else {\n                        frappe.msgprint(__('Please select at least one item.'));\n                    }\n                    \n                    d.hide();\n                }\n            });\n            \n            d.show();\n}\n\n\nfrappe.listview_settings['Item'] = {\n    add_fields: ['item_code', 'item_name'],  // Optional: define the fields to show in the list view\n\n    onload: function(listview) {\n        listview.page.add_action_item(__('Increase/Decrese by x - Amount'), function() {\n            let selected_items = listview.get_checked_items();\n            \n            request_data(selected_items,0)\n        });\n        \n        \n        listview.page.add_action_item(__('Increase/Decrese by x% - Percent'), function() {\n            let selected_items = listview.get_checked_items();\n            request_data(selected_items,1)\n        });\n\n    }\n};\n",
+  "view": "List"
+ }
+]
